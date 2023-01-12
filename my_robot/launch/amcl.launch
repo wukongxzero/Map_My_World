@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+<!--mapserver-->
+<arg name="map_file" default="$(find my_robot)/maps/map.yaml"/>
+<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+
+<!--localization-->
+
+   <node name="amcl" pkg="amcl" type="amcl" output="screen">
+
+      <remap from="scan" to="my_robot/laser/scan"/>
+      <param name="odom_frame_id" value="odom"/>
+      <param name="odom_model_type" value="diff-corrected"/>
+      <param name="base_frame_id" value="robot_footprint"/>
+      <param name="global_frame_id" value="map"/>
+
+      <!-- Overall Filters -->
+      <!-- Initial Position -->
+
+
+      <param name="initial_pose_x" value="-4.5"/>
+      <param name="initial_pose_y" value="-1.0"/>
+      <param name="initial_pose_a" value="M_PI/2.0"/>
+
+
+      <!-- Particles Number -->
+      <param name="min_particles" value="300"/>
+      <param name="max_particles" value="2000"/>
+
+      <!-- Filter Update or Scan Data Discard -->
+      <!-- Frequent filter update is computationally expensive, while scan data discard may result in poor localization -->
+      <param name="update_min_d" value="0.01"/>
+      <param name="update_min_a" value="0.0"/>
+
+      <!-- Laser Scan, Likelihood Field Model -->
+      <!-- The better the estimation of where the obstacles are, the better the localization results -->
+      <param name="laser_min_range" value="1.0"/>
+      <param name="laser_max_range" value="5.0"/>
+      <param name="laser_max_beams" value="35"/>
+      <param name="laser_z_hit" value="0.95"/>
+      <param name="laser_z_rand" value="0.05"/>
+
+   </node>
+
+<!-- Moving Node, Define a Navigation Location and Drive Robot to it -->
+   <node name="move_base" pkg="move_base" type="move_base" respawn="false" output="screen"> 
+
+   <remap from="scan" to="my_robot/laser/scan"/>
+   
+   <!-- Planner, Use the Params to Drive the Robot -->
+   <param name="base_global_planner" value="navfn/NavfnROS" />
+   <param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS"/>
+
+   <!-- To Send Navigation Goal to Robot, We Need to Define Config File -->
+   <rosparam file="$(find my_robot)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+   <rosparam file="$(find my_robot)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+   <rosparam file="$(find my_robot)/config/local_costmap_params.yaml" command="load" />
+   <rosparam file="$(find my_robot)/config/global_costmap_params.yaml" command="load" />
+   <rosparam file="$(find my_robot)/config/base_local_planner_params.yaml" command="load" />
+
+   </node>
+
+</launch>
